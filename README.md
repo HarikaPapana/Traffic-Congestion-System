@@ -1,203 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Traffic & Weather Prediction</title>
+POJECT TITLE:Traffic conjection system
+PROBLEM STATMENT:Traffic congestion is a major challenge in urban and semi-urban regions due to increasing vehicle density, unplanned road networks, and unpredictable weather conditions. Commuters often face delays, increased fuel consumption, air pollution, and stress because they lack real-time information about traffic and weather conditions along their routes. Existing navigation systems may not always provide combined insights into congestion levels and weather impact, making route selection inefficient. Hence, there is a need for a simple, web-based system that analyzes real-time traffic congestion and weather conditions to assist users in selecting the most efficient and less congested route
+PROPOSED SOLUTION-:To address this problem, an HTML-based Traffic Congestion Analysis and Route Advisory System is developed using HTML, CSS, and JavaScript with Maps and Weather API integration. The system enables users to select a source, destination, and route type through an interactive interface. It retrieves real-time traffic details such as distance, travel time, and congestion levels, along with weather conditions along the selected route. By analyzing this data, the system suggests efficient routes, reducing delays, fuel wastage, and improving travel efficiency in smart city transportation systems.
+FEATURES:
+-Real-time traffic congestion analysis,
+-Live distance and estimated travel time calculation,
+-Weather updates along the selected route,
+-Estimated fuel consumption for the chosen route,
+-Alerts for road construction and blocked paths,
+-Multiple route comparison for optimal selection,
+-Interactive source, destination, and route type selection,
+-Web-based application with no installation required,
+-User-friendly and responsive interface,
+-Supports smart city and intelligent transportation systems.
+TECH STACK:
+Frontend- HTML, CSS, JavaScript
+APIs-
+Maps API (for routes, traffic, distance, and travel time)
+Weather API (for route-based weather information)
+Browser-based execution (Chrome, Edge, Firefox)
 
-<style>
-body { margin:0; font-family: Arial,sans-serif; background:#f4f7fb; }
-header { background:#1e3c72; color:white; padding:15px; text-align:center; font-size:22px; }
-.container {
-  max-width:560px;
-  background:white;
-  margin:20px auto;
-  padding:25px;
-  border-radius:10px;
-  box-shadow:0 6px 15px rgba(0,0,0,0.15);
-}
-label { font-weight:bold; margin-top:12px; display:block; }
-input {
-  width:100%;
-  padding:10px;
-  margin-top:6px;
-  border-radius:6px;
-  border:1px solid #ccc;
-}
-button {
-  width:100%;
-  margin-top:20px;
-  padding:12px;
-  background:#1e3c72;
-  color:white;
-  border:none;
-  border-radius:6px;
-  font-size:16px;
-}
-.note {
-  margin-top:15px;
-  background:#f1f5f9;
-  padding:15px;
-  border-radius:6px;
-}
-#map { width:100%; height:350px; margin-top:20px; }
-</style>
-</head>
-
-<body>
-
-<header>🚦 Traffic & Weather Prediction (AP)</header>
-
-<div class="container">
-
-<label>Source</label>
-<input id="source" placeholder="Eg: Vijayawada">
-
-<label>Destination</label>
-<input id="destination" placeholder="Eg: Guntur">
-
-<label>Via / Middle Roads</label>
-<input id="routeText" placeholder="Eg: Ramavarappadu, Nidamanuru">
-
-<button onclick="predict()">Predict Route</button>
-
-<div id="result" class="note"></div>
-<div id="map"></div>
-
-</div>
-
-<script async defer
-src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDWkvWYCj27shjcj9gZtyaTRPs7CQhlzBM&callback=initMap">
-</script>
-
-<script>
-const weatherKey = "5bae2f763d31a9b91703cb6eec78f960";
-const DEFAULT_MILEAGE = 15;
-
-let map, directionsService, distanceService;
-let renderers = [];
-
-/* ONLY ACTUAL CONSTRUCTION ROADS */
-const constructionRoads = [
-  "ramavarappadu",
-  "nidamanuru",
-  "gollapudi",
-  "sabbavaram",
-  "sheelanagar",
-  "enikepadu",
-  "poranki"
-];
-
-function initMap(){
-  map = new google.maps.Map(document.getElementById("map"), {
-    center:{lat:16.5,lng:80.6},
-    zoom:7
-  });
-  directionsService = new google.maps.DirectionsService();
-  distanceService = new google.maps.DistanceMatrixService();
-}
-
-async function getWeather(city){
-  try{
-    const r = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city},IN&units=metric&appid=${weatherKey}`
-    );
-    const d = await r.json();
-    return `${d.weather[0].description}, ${d.main.temp}°C`;
-  }catch{
-    return "Unavailable";
-  }
-}
-
-function clearRoutes(){
-  renderers.forEach(r => r.setMap(null));
-  renderers = [];
-}
-
-async function predict(){
-
-  const src = source.value.trim();
-  const dst = destination.value.trim();
-  const via = routeText.value.trim();
-
-  if(!src || !dst){
-    alert("Enter source and destination");
-    return;
-  }
-
-  clearRoutes();
-
-  const weatherFrom = await getWeather(src);
-  const weatherTo = await getWeather(dst);
-
-  let points = [src];
-  if(via){
-    via.split(",").forEach(v => points.push(v.trim()));
-  }
-  points.push(dst);
-
-  let totalDistance = 0;
-  let totalNormal = 0;
-  let totalTraffic = 0;
-
-  for(let i=0;i<points.length-1;i++){
-
-    const start = points[i];
-    const end = points[i+1];
-
-    const isConstruction = constructionRoads.some(r =>
-      end.toLowerCase().includes(r)
-    );
-
-    const renderer = new google.maps.DirectionsRenderer({
-      map,
-      polylineOptions:{
-        strokeColor: isConstruction ? "#ff8c00" : "#1a73e8",
-        strokeWeight: isConstruction ? 6 : 5
-      }
-    });
-
-    renderers.push(renderer);
-
-    directionsService.route({
-      origin:start,
-      destination:end,
-      travelMode:"DRIVING"
-    }, (res, status)=>{
-      if(status === "OK") renderer.setDirections(res);
-    });
-
-    /* TRAFFIC + DISTANCE PER SEGMENT */
-    distanceService.getDistanceMatrix({
-      origins:[start],
-      destinations:[end],
-      travelMode:"DRIVING",
-      drivingOptions:{ departureTime:new Date() }
-    }, (res, status)=>{
-      if(status === "OK"){
-        const el = res.rows[0].elements[0];
-        totalDistance += el.distance.value;
-        totalNormal += el.duration.value;
-        if(el.duration_in_traffic)
-          totalTraffic += el.duration_in_traffic.value;
-      }
-    });
-  }
-
-  setTimeout(()=>{
-    const km = (totalDistance/1000).toFixed(1);
-    const fuel = (km / DEFAULT_MILEAGE).toFixed(2);
-
-    document.getElementById("result").innerHTML = `
-      📍 ${src} – ${weatherFrom}<br>
-      📍 ${dst} – ${weatherTo}<br><br>
-      📏 Distance: <b>${km} km</b><br>
-      ⏱ Normal Time: <b>${Math.round(totalNormal/60)} mins</b><br>
-      🚦 With Traffic: <b>${Math.round(totalTraffic/60)} mins</b><br>
-      ⛽ Fuel Required: <b>${fuel} litres</b><br><br>
-      🔵 Normal Road &nbsp;&nbsp; 🟠 Under Construction
-    `;
-  }, 1200);
-}
-</script>
-</body>
-</html>
+If you want this shorter, more technical, or formatted exactly for a README.md, I can tailor it instantly 👍
