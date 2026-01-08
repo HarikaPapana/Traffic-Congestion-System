@@ -18,5 +18,3 @@ APIs-
 Maps API (for routes, traffic, distance, and travel time)
 Weather API (for route-based weather information)
 Browser-based execution (Chrome, Edge, Firefox)
-
-If you want this shorter, more technical, or formatted exactly for a README.md, I can tailor it instantly 👍
